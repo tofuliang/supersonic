@@ -205,7 +205,7 @@ func (s *ServerManager) connect(connection ServerConnection, password string) (m
 		cli = &subsonicMP.SubsonicServer{
 			Client: subsonic.Client{
 				UserAgent:    ua,
-				Client:       &http.Client{Timeout: 40 * time.Second},
+				Client:       &http.Client{Timeout: 300 * time.Second},
 				BaseUrl:      connection.Hostname,
 				User:         connection.Username,
 				PasswordAuth: connection.LegacyAuth,
@@ -216,7 +216,7 @@ func (s *ServerManager) connect(connection ServerConnection, password string) (m
 		altCli = &subsonicMP.SubsonicServer{
 			Client: subsonic.Client{
 				UserAgent:    ua,
-				Client:       &http.Client{Timeout: 40 * time.Second},
+				Client:       &http.Client{Timeout: 300 * time.Second},
 				BaseUrl:      connection.AltHostname,
 				User:         connection.Username,
 				PasswordAuth: connection.LegacyAuth,
