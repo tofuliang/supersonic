@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -366,23 +367,32 @@ func (a *App) callOnExit() error {
 	return nil
 }
 
+// resolveHTTPProxy returns the proxy URL to use for MPV playback.
+// Priority: config file > https_proxy env > HTTPS_PROXY env > empty string
+func resolveHTTPProxy(cfg LocalPlaybackConfig) string {
+	if cfg.HTTPProxy != "" {
+		return cfg.HTTPProxy
+	}
+	if proxy := os.Getenv("https_proxy"); proxy != "" {
+		return proxy
+	}
+	if proxy := os.Getenv("HTTPS_PROXY"); proxy != "" {
+		return proxy
+	}
+	return ""
+}
+
 func (a *App) initMPV() error {
 	p := mpv.NewWithClientName(a.appName)
 	c := a.Config.LocalPlayback
 	c.InMemoryCacheSizeMB = clamp(c.InMemoryCacheSizeMB, 10, 500)
 
 	// Get proxy config: config file first, environment variable as fallback
-	httpProxy := c.HTTPProxy
-	if httpProxy == "" {
-		httpProxy = os.Getenv("https_proxy")
-		if httpProxy == "" {
-			httpProxy = os.Getenv("HTTPS_PROXY")
-		}
-	}
+	httpProxy := resolveHTTPProxy(c)
 
-	// Log proxy configuration for debugging
-	if httpProxy != "" {
-		log.Printf("Setting MPV proxy: %s", httpProxy)
+	// Log proxy configuration for debugging (redact credentials)
+	if httpProxy !=  {
+		log.Printf("Setting MPV proxy: %s", redactProxyURL(httpProxy))
 	}
 
 	if err := p.Init(c.InMemoryCacheSizeMB, httpProxy); err != nil {
@@ -822,4 +832,16 @@ func isWindowsGUI() bool {
 	}
 
 	return subsystem == 2 /*IMAGE_SUBSYSTEM_WINDOWS_GUI*/
+}
+
+// redactProxyURL removes credentials from proxy URL for safe logging
+func redactProxyURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "<invalid URL>"
+	}
+	if u.User != nil {
+		u.User = nil
+	}
+	return u.String()
 }
