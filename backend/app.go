@@ -370,7 +370,7 @@ func (a *App) initMPV() error {
 	p := mpv.NewWithClientName(a.appName)
 	c := a.Config.LocalPlayback
 	c.InMemoryCacheSizeMB = clamp(c.InMemoryCacheSizeMB, 10, 500)
-	if err := p.Init(c.InMemoryCacheSizeMB); err != nil {
+	if err := p.Init(c.InMemoryCacheSizeMB, c.HTTPProxy); err != nil {
 		return fmt.Errorf("failed to initialize mpv player: %s", err.Error())
 	}
 	a.LocalPlayer = p
