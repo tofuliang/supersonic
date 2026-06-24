@@ -370,7 +370,22 @@ func (a *App) initMPV() error {
 	p := mpv.NewWithClientName(a.appName)
 	c := a.Config.LocalPlayback
 	c.InMemoryCacheSizeMB = clamp(c.InMemoryCacheSizeMB, 10, 500)
-	if err := p.Init(c.InMemoryCacheSizeMB, c.HTTPProxy); err != nil {
+
+	// Get proxy config: config file first, environment variable as fallback
+	httpProxy := c.HTTPProxy
+	if httpProxy == "" {
+		httpProxy = os.Getenv("https_proxy")
+		if httpProxy == "" {
+			httpProxy = os.Getenv("HTTPS_PROXY")
+		}
+	}
+
+	// Log proxy configuration for debugging
+	if httpProxy != "" {
+		log.Printf("Setting MPV proxy: %s", httpProxy)
+	}
+
+	if err := p.Init(c.InMemoryCacheSizeMB, httpProxy); err != nil {
 		return fmt.Errorf("failed to initialize mpv player: %s", err.Error())
 	}
 	a.LocalPlayer = p
