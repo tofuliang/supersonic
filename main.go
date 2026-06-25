@@ -76,11 +76,19 @@ func main() {
 		tr := res.TranslationsInfo[lIdx]
 		content, err := res.Translations.ReadFile("translations/" + tr.TranslationFileName)
 		if err == nil {
-			// "trick" Fyne into loading translations for configured language
-			// by pretending it's the translation for the system locale
-			name := lang.SystemLocale().LanguageString()
-			lang.AddTranslations(fyne.NewStaticResource(name+".json", content))
-			success = true
+			// Register the translation under the BCP47 locale that matches Fyne's built-in
+			// base.zh_Hans.json bundle tag, so go-i18n's matcher finds our messages.
+			locale := tr.Name
+			if tr.Name == "zhHans" {
+				locale = "zh-Hans"
+			} else if tr.Name == "zhHant" {
+				locale = "zh-Hant"
+			}
+			if err := lang.AddTranslationsForLocale(content, fyne.Locale(locale)); err != nil {
+				log.Printf("Error registering translation for %s: %s\n", tr.TranslationFileName, err.Error())
+			} else {
+				success = true
+			}
 		} else {
 			log.Printf("Error loading translation file %s: %s\n", tr.TranslationFileName, err.Error())
 		}
